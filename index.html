@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bezier Curve Control</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <label for="cp1">Control Point 1 (X):</label>
+    <input type="range" id="cp1" min="-30" max="30" value="0" oninput="updateShape()">
+    <label for="cp2">Control Point 2 (X):</label>
+    <input type="range" id="cp2" min="-30" max="30" value="0" oninput="updateShape()">
+    <label for="cp3">Control Point 3 (X):</label>
+    <input type="range" id="cp3" min="-30" max="30" value="0" oninput="updateShape()">
+    <label for="smoothness">Smoothness:</label>
+<input type="range" id="smoothness" min="10" max="100" value="20" oninput="updateShape()">
+
+    <script src="https://threejs.org/build/three.js"></script>
+    <div id="webgl-output"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="vase.js"></script>
+</body>
+</html>
