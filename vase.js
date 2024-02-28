@@ -1,6 +1,6 @@
-// Ensure you have Three.js and dat.GUI included in your HTML
+// Assuming Three.js and dat.GUI are included in your HTML
 
-let scene, camera, renderer, curveObject, curve;
+let scene, camera, renderer, latheMesh, curve;
 const controlPoints = [
     new THREE.Vector3(-10, 0, 0),
     new THREE.Vector3(-5, 5, 0),
@@ -14,45 +14,47 @@ animate();
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 30;
+    camera.position.set(30, 20, 30);
+    camera.lookAt(scene.position);
+
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(-1, -1, -1);
-    scene.add(directionalLight);
-    
-    updateGeometry();
+    // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
+    curve = new THREE.CatmullRomCurve3(controlPoints);
+    const points2D = curve.getPoints(50).map(p => new THREE.Vector2(p.y, p.z));
+    const geometry = new THREE.LatheGeometry(points2D, 20);
+    const material = new THREE.MeshPhongMaterial({ color: 0x6495ED, side: THREE.DoubleSide });
+    latheMesh = new THREE.Mesh(geometry, material);
+    scene.add(latheMesh);
 
-    // GUI setup
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    // GUI
     const gui = new dat.GUI();
     controlPoints.forEach((point, index) => {
         const folder = gui.addFolder(`Point ${index + 1}`);
-        folder.add(point, 'x', -20, 20).onChange(updateGeometry);
-        folder.add(point, 'y', -20, 20).onChange(updateGeometry);
-        folder.add(point, 'z', -20, 20).onChange(updateGeometry);
+        folder.add(point, 'y', -20, 20).onChange(updateLathe);
+        folder.add(point, 'z', -20, 20).onChange(updateLathe);
         folder.open();
     });
 }
 
-function updateGeometry() {
-    if (curveObject) scene.remove(curveObject);
-
-     
-
-    //curve = new THREE.CatmullRomCurve3(controlPoints);
-    const tubeGeometry = new THREE.LatheGeometry(controlPoints, 12, 0, Math.PI);
-    const material = new THREE.MeshPhongMaterial({ color: 0xff5533, side: THREE.FrontSide });
-    curveObject = new THREE.Mesh(tubeGeometry, material);
-    scene.add(curveObject);
-
-
+function updateLathe() {
+    curve = new THREE.CatmullRomCurve3(controlPoints);
+    const points2D = curve.getPoints(50).map(p => new THREE.Vector2(p.y, p.z));
+    latheMesh.geometry.dispose();
+    latheMesh.geometry = new THREE.LatheGeometry(points2D, 20);
 }
 
 function animate() {
     requestAnimationFrame(animate);
+    latheMesh.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
     renderer.render(scene, camera);
 }
