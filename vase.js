@@ -2,10 +2,10 @@
 
 let scene, camera, renderer, latheMesh, curve;
 const controlPoints = [
-    new THREE.Vector3(-10, 0, 0),
-    new THREE.Vector3(-5, 5, 0),
-    new THREE.Vector3(5, 5, 0),
-    new THREE.Vector3(10, 0, 0)
+    new THREE.Vector3(-10, 2, 15),
+    new THREE.Vector3(-5, 8, 6),
+    new THREE.Vector3(5, 6, -7),
+    new THREE.Vector3(10, 9, -20)
 ];
 
 init();
@@ -20,6 +20,13 @@ function init() {
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
+
+
+    // OrbitControls setup
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Optional, but for a smoother damping effect
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
 
     // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
     curve = new THREE.CatmullRomCurve3(controlPoints);
@@ -56,5 +63,7 @@ function updateLathe() {
 function animate() {
     requestAnimationFrame(animate);
     latheMesh.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
+    controls.update(); 
+
     renderer.render(scene, camera);
 }
