@@ -1,6 +1,6 @@
 // Assuming Three.js and dat.GUI are included in your HTML
 
-let scene, camera, renderer, latheMesh, curve;
+let scene, camera, renderer, latheMesh, curve, cubeRenderTarget;
 let angularity = 10; // Initial value for angularity
 
 const controlPoints = [
@@ -32,20 +32,43 @@ function init() {
     controls.dampingFactor = 0.50;
     controls.screenSpacePanning = false;
 
+ 
     // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
     curve = new THREE.CatmullRomCurve3(controlPoints);
     const points2D = curve.getPoints(angularity).map(p => new THREE.Vector2(p.y, p.z));
     
-    const geometry = new THREE.LatheGeometry(points2D, 20);
-    
-    const texture = new THREE.TextureLoader().load('t3.jpg' ); 
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2, 2);
-    const material = new THREE.MeshPhongMaterial( { map:texture, side: THREE.DoubleSide } );
-    // const material = new THREE.MeshPhongMaterial({ color: 0x6495ED, side: THREE.DoubleSide });
+    const points2DReversed = points2D.reverse();
+    const geometry = new THREE.LatheGeometry(points2DReversed, 20);
 
-    latheMesh = new THREE.Mesh(geometry, material);
-    scene.add(latheMesh);
+
+    new RGBELoader().setPath('textures/').load('quarry_01_1k.hdr', function(hdrmap) {
+        let envmap = envmaploader.fromCubemap(hdrmap);
+        const texture = new THREE.TextureLoader().load('t3.jpg' ); 
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 2);
+
+        const vaseMaterial = {
+            clearcoat: 1.0,
+            cleacoatRoughness:0.1,
+            metalness: 0.9,
+            roughness:0.5,
+            color: 0x8418ca,
+            normalMap: texture,
+            normalScale: new THREE.Vector2(0.15,0.15),
+            envMap: envmap.texture
+          };
+
+          latheMesh = new THREE.Mesh(geometry, material);
+          scene.add(latheMesh);
+
+
+    })
+    
+
+
+ 
+
+
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0x404040);
@@ -76,7 +99,8 @@ function updateLathe() {
     curve = new THREE.CatmullRomCurve3(controlPoints);
     const points2D = curve.getPoints(angularity).map(p => new THREE.Vector2(p.y, p.z));
     latheMesh.geometry.dispose();
-    latheMesh.geometry = new THREE.LatheGeometry(points2D, 20);
+    const points2DReversed = points2D.reverse();
+    latheMesh.geometry = new THREE.LatheGeometry(points2DReversed, 20);
 }
 
 function animate() {
