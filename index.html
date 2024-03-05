@@ -1,224 +1,293 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Three.js Curve with GUI</title>
     <style>
-        body { margin: 0; }
+      body {
+        margin: 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
-    <script  type="module">
-        import * as THREE from './three.module.js';
-         import { RGBELoader } from './RGBELoader.js';
-         import { OrbitControls } from './js/OrbitControls.js';
+    <script type="module">
+      import * as THREE from "./three.module.js";
+      import { RGBELoader } from "./RGBELoader.js";
+      import { OrbitControls } from "./js/OrbitControls.js";
 
-         // Assuming Three.js and dat.GUI are included in your HTML
+      // Assuming Three.js and dat.GUI are included in your HTML
 
-let scene, camera, renderer, latheMesh, curve, cubeRenderTarget, controls;
-let angularity = 10; // Initial value for angularity
-let metalnes = 0.5;
-let roughness = 0.5;
-let clearcoat = 0.5;
-let vaseMaterial;
-let color = 0x00ff00;
+      let scene, camera, renderer, latheMesh, curve, cubeRenderTarget, controls;
+      let angularity = 20; // Initial value for angularity
+      let metalnes = 0.5;
+      let roughness = 0.5;
+      let clearcoat = 0.5;
+      let vaseMaterial;
+      let normal;
+      let color = 0x1b4696;
+      let latheSides = 20;
+      const controlPoints = [
+        new THREE.Vector3(-10, 2, 15),
+        new THREE.Vector3(-5, 8, 6),
+        new THREE.Vector3(5, 12, -7),
+        new THREE.Vector3(10, 9, -20),
+      ];
 
-const controlPoints = [
-    new THREE.Vector3(-10, 2, 15),
-    new THREE.Vector3(-5, 8, 6),
-    new THREE.Vector3(5, 6, -7),
-    new THREE.Vector3(10, 9, -20)
-];
+      init();
+      animate();
 
-init();
-animate();
+      function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(30, 20, 30);
+        camera.lookAt(scene.position);
 
-function init() {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(30, 20, 30);
-    camera.lookAt(scene.position);
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.VSMShadowMap;
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
-    document.body.appendChild(renderer.domElement);
-
-
-    // OrbitControls setup
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; // Optional, but for a smoother damping effect
-    controls.dampingFactor = 0.50;
-    controls.screenSpacePanning = false;
-
- 
-    // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
-    curve = new THREE.CatmullRomCurve3(controlPoints);
-    const points2D = curve.getPoints(angularity).map(p => new THREE.Vector2(p.y, p.z));
-    
-    const points2DReversed = points2D.reverse();
-    const geometry = new THREE.LatheGeometry(points2DReversed, 20);
-
-    let envmaploader = new THREE.PMREMGenerator(renderer);
-    latheMesh = new THREE.Mesh();
-    // Inside the RGBELoader load callback
-new RGBELoader().setPath('textures/').load('quarry_01_1k.hdr', function(hdrEquirect) {
-    const hdrEquirectResult = envmaploader.fromEquirectangular(hdrEquirect);
-    scene.environment = hdrEquirectResult.texture;
-
-    let texture = new THREE.TextureLoader().load('t2.jpg'); 
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2, 2);
-
-    vaseMaterial = new THREE.MeshPhysicalMaterial({
-        clearcoat: 0.2,
-        metalness: 0.2,
-        roughness: 0.6,
-        normalMap: texture,
-        flatShading: 0,
-        normalScale: new THREE.Vector2(0.15, 0.15),
-        envMap: hdrEquirectResult.texture,
-        side: THREE.DoubleSide,
-    });
-    console.log(vaseMaterial.specularColor);
-    const points2D = curve.getPoints(angularity).map(p => new THREE.Vector2(p.y, p.z));
-    const points2DReversed = points2D.reverse();
-    const geometry = new THREE.LatheGeometry(points2DReversed, 40);
-
-    latheMesh.geometry = geometry;
-    latheMesh.material = vaseMaterial;
-    scene.add(latheMesh);
-    setupGUI();
-});
-
-    
-
-  
-    // latheMesh = new THREE.Mesh(geometry, vaseMaterial);
-    
- 
+        document.body.appendChild(renderer.domElement);
 
 
+        // OrbitControls setup
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Optional, but for a smoother damping effect
+        controls.dampingFactor = 0.5;
+        controls.screenSpacePanning = false;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
+        // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
+        curve = new THREE.CatmullRomCurve3(controlPoints);
+        const points2D = curve
+          .getPoints(angularity)
+          .map((p) => new THREE.Vector2(p.y, p.z));
 
-    
+        const points2DReversed = points2D.reverse();
+        const geometry = new THREE.LatheGeometry(points2DReversed, 20);
 
-}
+        let envmaploader = new THREE.PMREMGenerator(renderer);
+        latheMesh = new THREE.Mesh();
+        latheMesh.castShadow = true;
 
-function randomObject() {
-    // add index to the forEach callback to get the index of the point
-    controlPoints.forEach((point, index) => {
-        let y=0, z=0;
-        if (index === 0 || index === 1){
-            y = Math.random() * 20;
+        // Add ap plane
+        const planeGeometry = new THREE.PlaneGeometry(100, 100);
+        // load texture from materials/woodfloor (normal and displacement map are also available in the folder)
+        let dif = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_diff_2k.jpg");
+        let normal = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_nor_gl_2k.jpg");
+        let disp = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_disp_2k.png");
+        const planeMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          side: THREE.DoubleSide,
+          map: dif,
+          normalMap: normal,
+          displacementMap: disp,
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = Math.PI / 2;
+        plane.position.y = -19;
+        scene.add(plane);
+
+        // enable shadows on plane
+        plane.receiveShadow = true;
+
+        //make background white color
+        scene.background = new THREE.Color(0xffffff);
+
+        // load normal map texture from normalmaps/ folder normal.jpg
+        normal = new THREE.TextureLoader().load("./normalmaps/normal1.jpg");
+        normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
+        normal.repeat.set(4, 4);
+
+        // Inside the RGBELoader load callback
+        new RGBELoader()
+          .setPath("textures/")
+          .load("quarry_01_1k.hdr", function (hdrEquirect) {
+            const hdrEquirectResult =
+              envmaploader.fromEquirectangular(hdrEquirect);
+            scene.environment = hdrEquirectResult.texture;
+
+            let texture = new THREE.TextureLoader().load("t1.jpg");
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(3, 2);
+
+            vaseMaterial = new THREE.MeshPhysicalMaterial({
+              color: color,
+              clearcoat: 0.2,
+              metalness: 0.2,
+              roughness: 0.6,
+              normalMap: normal,
+              flatShading: 0,
+              normalScale: new THREE.Vector2(0.15, 0.15),
+              envMap: hdrEquirectResult.texture,
+              side: THREE.DoubleSide,
+            });
+
+            const points2D = curve
+              .getPoints(angularity)
+              .map((p) => new THREE.Vector2(p.y, p.z));
+            const points2DReversed = points2D.reverse();
+            const geometry = new THREE.LatheGeometry(points2DReversed, 40);
+
+            latheMesh.geometry = geometry;
+            latheMesh.material = vaseMaterial;
+            scene.add(latheMesh);
+            setupGUI();
+          });
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+		    dirLight.castShadow = true;
+        dirLight.position.set(-1, 1, 1);
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 500;
+        dirLight.shadow.camera.right = 17;
+        dirLight.shadow.camera.left = - 17;
+        dirLight.shadow.camera.top	= 17;
+        dirLight.shadow.camera.bottom = - 17;
+        dirLight.shadow.mapSize.width = 512;
+        dirLight.shadow.mapSize.height = 512;
+        dirLight.shadow.radius = 25;
+        dirLight.shadow.bias = - 0.01;
+        scene.add(dirLight);
+      }
+
+      function randomObject() {
+        // add index to the forEach callback to get the index of the point
+        controlPoints.forEach((point, index) => {
+          let y = 0,
+            z = 0;
+          if (index === 0 || index === 1) {
+            y = (Math.random() * 20) + 3;
             z = Math.random() * 20;
-        } 
+          }
 
-       
-        if (index === 2 || index === 3){
-            y = Math.random() * 20;
+          if (index === 2 ) {
+            y = Math.random() * 20 + 3;
             z = Math.random() * 40 - 40;
-        }
+          }
+          if (index === 3) {
+            y = Math.random() * 20
+            z = -20;
+          }
+          point.y = y;
+          point.z = z;
+        });
 
-    
-        point.y = y;
-        point.z = z;
-    });
-    
-    updateLathe();
-}
-
-function setupGUI(){
-    // GUI
-    const gui = new dat.GUI();
-    controlPoints.forEach((point, index) => {
-        const folder = gui.addFolder(`Point ${index + 1}`);
-        folder.add(point, 'y', 0, 20).onChange(updateLathe);
-        folder.add(point, 'z', -40, 20).onChange(updateLathe);
-        folder.open();
-    });
-    const folder = gui.addFolder(`Angularity`);
-
-    folder.add({angularity: angularity}, 'angularity', 3, 25).step(1).onChange(value => {
-        angularity = value;
         updateLathe();
-    });
+      }
 
-    folder.add({metalness: metalnes}, 'metalness', 0, 1).onChange(value => {
-        metalnes = value;
-        vaseMaterial.metalness = metalnes;
-    });
-    folder.add({roughness: roughness}, 'roughness', 0, 1).onChange(value => {
-        roughness = value;
-        vaseMaterial.roughness = roughness;
-    });
-    folder.add({clearcoat: clearcoat}, 'clearcoat', 0, 1).onChange(value => {
-        clearcoat = value;
-        vaseMaterial.clearcoat = clearcoat;
-    });
+      function setupGUI() {
+        // GUI
+        const gui = new dat.GUI();
+        let minz= -40;
+        let maxz = 20;
+        controlPoints.forEach((point, index) => {
+          const folder = gui.addFolder(`Point ${index + 1}`);
+          folder.add(point, "y", 0, 20).onChange(updateLathe);
+          if(index==3){
+            minz = -20;
+            maxz = -20;
+          }
+          folder.add(point, "z", minz, maxz).onChange(updateLathe);
+          folder.open();
+        });
+        const folder = gui.addFolder(`Angularity`);
 
-    // Add GUI folder for material properties
-    const materialFolder = gui.addFolder('Vase Material');
+        folder
+          .add({ angularity: angularity }, "angularity", 4, 45)
+          .step(1)
+          .onChange((value) => {
+            angularity = value;
+            updateLathe();
+          });
 
-    // Object to hold the color value for GUI
-    const materialColor = {
-        color: `#${vaseMaterial.color.getHexString()}`, // Convert THREE.Color to hex string for dat.GUI
-    };
-
-    // Add color controller
-    materialFolder.addColor(materialColor, 'color').name('Color').onChange(function(hexColor) {
-        vaseMaterial.color.set(hexColor); // Update material color
-    });
-
-    gui.add({generate: randomObject}, 'generate').name('Generate');
+        folder
+        .add({ latheSides: latheSides }, "latheSides", 5, 55)
+        .step(1)
+        .onChange((value) => {
+          latheSides = value;
+          updateLathe();
+        });
 
 
-    folder.open();
-}
+        folder
+          .add({ metalness: metalnes }, "metalness", 0, 1)
+          .onChange((value) => {
+            metalnes = value;
+            vaseMaterial.metalness = metalnes;
+          });
+        folder
+          .add({ roughness: roughness }, "roughness", 0, 1)
+          .onChange((value) => {
+            roughness = value;
+            vaseMaterial.roughness = roughness;
+          });
+        folder
+          .add({ clearcoat: clearcoat }, "clearcoat", 0, 1)
+          .onChange((value) => {
+            clearcoat = value;
+            vaseMaterial.clearcoat = clearcoat;
+          });
 
-function handleColorChange( color ) {
+        // folder.open();
+        // Add GUI folder for material properties
+        // const materialFolder = gui.addFolder("Vase Material");
 
-return function ( value ) {
+        // Object to hold the color value for GUI
+        const materialColor = {
+          color: `#${vaseMaterial.color.getHexString()}`, // Convert THREE.Color to hex string for dat.GUI
+        };
 
-    if ( typeof value === 'string' ) {
+        // Add color controller
+        folder
+          .addColor(materialColor, "color")
+          .name("Color")
+          .onChange(function (hexColor) {
+            vaseMaterial.color.set(hexColor); // Update material color
+          });
 
-        value = value.replace( '#', '0x' );
+        gui.add({ generate: randomObject }, "generate").name("Generate");
 
-    }
+        folder.open();
+      }
 
-    color.setHex( value );
+      function handleColorChange(color) {
+        return function (value) {
+          if (typeof value === "string") {
+            value = value.replace("#", "0x");
+          }
 
-};
+          color.setHex(value);
+        };
+      }
 
-}
+      function updateLathe() {
+        curve = new THREE.CatmullRomCurve3(controlPoints);
+        const points2D = curve
+          .getPoints(angularity)
+          .map((p) => new THREE.Vector2(p.y, p.z));
+        latheMesh.geometry.dispose();
+        const points2DReversed = points2D.reverse();
+        latheMesh.geometry = new THREE.LatheGeometry(points2DReversed, latheSides);
+      }
 
-function updateLathe() {
-    curve = new THREE.CatmullRomCurve3(controlPoints);
-    const points2D = curve.getPoints(angularity).map(p => new THREE.Vector2(p.y, p.z));
-    latheMesh.geometry.dispose();
-    const points2DReversed = points2D.reverse();
-    latheMesh.geometry = new THREE.LatheGeometry(points2DReversed, 20);
-}
+      function animate() {
+        requestAnimationFrame(animate);
+        //latheMesh.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
+        controls.update();
 
-function animate() {
-    requestAnimationFrame(animate);
-    latheMesh.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
-    controls.update(); 
-
-    renderer.render(scene, camera);
-}
-
+        renderer.render(scene, camera);
+      }
     </script>
- 
-
-     
-</body>
+  </body>
 </html>
