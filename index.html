@@ -57,14 +57,12 @@
 
         document.body.appendChild(renderer.domElement);
 
-
         // OrbitControls setup
         controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // Optional, but for a smoother damping effect
+        controls.enableDamping = true;
         controls.dampingFactor = 0.5;
         controls.screenSpacePanning = false;
 
-        // Create a CatmullRomCurve3 and convert it to 2D points for LatheGeometry
         curve = new THREE.CatmullRomCurve3(controlPoints);
         const points2D = curve
           .getPoints(angularity)
@@ -80,9 +78,15 @@
         // Add ap plane
         const planeGeometry = new THREE.PlaneGeometry(100, 100);
         // load texture from materials/woodfloor (normal and displacement map are also available in the folder)
-        let dif = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_diff_2k.jpg");
-        let normal = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_nor_gl_2k.jpg");
-        let disp = new THREE.TextureLoader().load("./materials/woodfloor/wood_floor_worn_disp_2k.png");
+        let dif = new THREE.TextureLoader().load(
+          "./materials/woodfloor/wood_floor_worn_diff_2k.jpg"
+        );
+        let normal = new THREE.TextureLoader().load(
+          "./materials/woodfloor/wood_floor_worn_nor_gl_2k.jpg"
+        );
+        let disp = new THREE.TextureLoader().load(
+          "./materials/woodfloor/wood_floor_worn_disp_2k.png"
+        );
         const planeMaterial = new THREE.MeshStandardMaterial({
           color: 0xffffff,
           side: THREE.DoubleSide,
@@ -95,10 +99,8 @@
         plane.position.y = -19;
         scene.add(plane);
 
-        // enable shadows on plane
         plane.receiveShadow = true;
 
-        //make background white color
         scene.background = new THREE.Color(0xffffff);
 
         // load normal map texture from normalmaps/ folder normal.jpg
@@ -106,7 +108,6 @@
         normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
         normal.repeat.set(4, 4);
 
-        // Inside the RGBELoader load callback
         new RGBELoader()
           .setPath("textures/")
           .load("quarry_01_1k.hdr", function (hdrEquirect) {
@@ -146,18 +147,18 @@
         const ambientLight = new THREE.AmbientLight(0xffffff);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-		    dirLight.castShadow = true;
+        dirLight.castShadow = true;
         dirLight.position.set(-1, 1, 1);
         dirLight.shadow.camera.near = 1;
         dirLight.shadow.camera.far = 500;
         dirLight.shadow.camera.right = 17;
-        dirLight.shadow.camera.left = - 17;
-        dirLight.shadow.camera.top	= 17;
-        dirLight.shadow.camera.bottom = - 17;
+        dirLight.shadow.camera.left = -17;
+        dirLight.shadow.camera.top = 17;
+        dirLight.shadow.camera.bottom = -17;
         dirLight.shadow.mapSize.width = 512;
         dirLight.shadow.mapSize.height = 512;
         dirLight.shadow.radius = 25;
-        dirLight.shadow.bias = - 0.01;
+        dirLight.shadow.bias = -0.01;
         scene.add(dirLight);
       }
 
@@ -167,16 +168,16 @@
           let y = 0,
             z = 0;
           if (index === 0 || index === 1) {
-            y = (Math.random() * 20) + 3;
+            y = Math.random() * 20 + 3;
             z = Math.random() * 20;
           }
 
-          if (index === 2 ) {
+          if (index === 2) {
             y = Math.random() * 20 + 3;
             z = Math.random() * 40 - 40;
           }
           if (index === 3) {
-            y = Math.random() * 20
+            y = Math.random() * 20;
             z = -20;
           }
           point.y = y;
@@ -189,12 +190,12 @@
       function setupGUI() {
         // GUI
         const gui = new dat.GUI();
-        let minz= -40;
+        let minz = -40;
         let maxz = 20;
         controlPoints.forEach((point, index) => {
           const folder = gui.addFolder(`Point ${index + 1}`);
           folder.add(point, "y", 0, 20).onChange(updateLathe);
-          if(index==3){
+          if (index == 3) {
             minz = -20;
             maxz = -20;
           }
@@ -212,13 +213,12 @@
           });
 
         folder
-        .add({ latheSides: latheSides }, "latheSides", 5, 55)
-        .step(1)
-        .onChange((value) => {
-          latheSides = value;
-          updateLathe();
-        });
-
+          .add({ latheSides: latheSides }, "latheSides", 5, 55)
+          .step(1)
+          .onChange((value) => {
+            latheSides = value;
+            updateLathe();
+          });
 
         folder
           .add({ metalness: metalnes }, "metalness", 0, 1)
@@ -239,16 +239,10 @@
             vaseMaterial.clearcoat = clearcoat;
           });
 
-        // folder.open();
-        // Add GUI folder for material properties
-        // const materialFolder = gui.addFolder("Vase Material");
-
-        // Object to hold the color value for GUI
         const materialColor = {
           color: `#${vaseMaterial.color.getHexString()}`, // Convert THREE.Color to hex string for dat.GUI
         };
 
-        // Add color controller
         folder
           .addColor(materialColor, "color")
           .name("Color")
@@ -278,7 +272,10 @@
           .map((p) => new THREE.Vector2(p.y, p.z));
         latheMesh.geometry.dispose();
         const points2DReversed = points2D.reverse();
-        latheMesh.geometry = new THREE.LatheGeometry(points2DReversed, latheSides);
+        latheMesh.geometry = new THREE.LatheGeometry(
+          points2DReversed,
+          latheSides
+        );
       }
 
       function animate() {
