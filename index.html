@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Three.js Curve with GUI</title>
+    <title>Three.js Pottery Vase Maker</title>
     <style>
       body {
         margin: 0;
@@ -19,15 +19,16 @@
       // Assuming Three.js and dat.GUI are included in your HTML
 
       let scene, camera, renderer, latheMesh, curve, cubeRenderTarget, controls;
-      let angularity = 20; // Initial value for angularity
+      let angularity = 30; // Initial value for angularity
       let metalnes = 0.5;
       let roughness = 0.5;
       let clearcoat = 0.5;
       let vaseMaterial;
       let normal;
       let color = 0x1b4696;
-      let latheSides = 20;
+      let latheSides = 30;
       const controlPoints = [
+        new THREE.Vector3(-10, 2, 25),
         new THREE.Vector3(-10, 2, 15),
         new THREE.Vector3(-5, 8, 6),
         new THREE.Vector3(5, 12, -7),
@@ -84,29 +85,52 @@
         let normal = new THREE.TextureLoader().load(
           "./materials/woodfloor/wood_floor_worn_nor_gl_2k.jpg"
         );
+        
         let disp = new THREE.TextureLoader().load(
           "./materials/woodfloor/wood_floor_worn_disp_2k.png"
         );
-        const planeMaterial = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          side: THREE.DoubleSide,
-          map: dif,
-          normalMap: normal,
-          displacementMap: disp,
-        });
-        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.rotation.x = Math.PI / 2;
-        plane.position.y = -19;
-        scene.add(plane);
+        dif.repeat.set(2, 2);
+        normal.repeat.set(2, 2);
+        disp.repeat.set(2, 2);
 
-        plane.receiveShadow = true;
+        // Wooden Plane
+        // const planeMaterial = new THREE.MeshStandardMaterial({
+        //   color: 0xffffff,
+        //   side: THREE.DoubleSide,
+        //   metalness: 0,
+        //   flatShading: 0,
+        //     map: dif,
+        //     normalMap: normal,
+        //     displacementMap: disp,
+        // });
+        // const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        // plane.rotation.x = Math.PI / 2;
+        // plane.position.y = -19;
+        // scene.add(plane);
+
+        // Pink Plane
+        const plane = new THREE.Mesh(
+					new THREE.PlaneGeometry(),
+					new THREE.ShadowMaterial( {
+						color: 0x000,
+						transparent: true,
+						opacity: 0.075,
+						side: THREE.DoubleSide,
+					} ),
+				);
+				plane.position.y = -20;
+				plane.rotation.x = Math.PI / 2;
+				plane.scale.setScalar( 200 );
+				plane.receiveShadow = true;
+				scene.add( plane );
+
 
         scene.background = new THREE.Color(0xffffff);
 
         // load normal map texture from normalmaps/ folder normal.jpg
-        normal = new THREE.TextureLoader().load("./normalmaps/normal1.jpg");
+        normal = new THREE.TextureLoader().load("./normalmaps/MetalCastRustedNormal.png");
         normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
-        normal.repeat.set(4, 4);
+        normal.repeat.set(3, 2);
 
         new RGBELoader()
           .setPath("textures/")
@@ -115,7 +139,7 @@
               envmaploader.fromEquirectangular(hdrEquirect);
             scene.environment = hdrEquirectResult.texture;
 
-            let texture = new THREE.TextureLoader().load("t1.jpg");
+            let texture = new THREE.TextureLoader().load("./materials/MetalCastRusted.jpg");
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(3, 2);
 
@@ -126,9 +150,9 @@
               roughness: 0.6,
               normalMap: normal,
               flatShading: 0,
-              normalScale: new THREE.Vector2(0.15, 0.15),
               envMap: hdrEquirectResult.texture,
               side: THREE.DoubleSide,
+              map: texture,
             });
 
             const points2D = curve
@@ -150,7 +174,7 @@
         dirLight.castShadow = true;
         dirLight.position.set(-1, 1, 1);
         dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 500;
+        dirLight.shadow.camera.far = 50;
         dirLight.shadow.camera.right = 17;
         dirLight.shadow.camera.left = -17;
         dirLight.shadow.camera.top = 17;
@@ -167,16 +191,16 @@
         controlPoints.forEach((point, index) => {
           let y = 0,
             z = 0;
-          if (index === 0 || index === 1) {
+          if (index === 0 || index === 1 || index=== 2) {
             y = Math.random() * 20 + 3;
             z = Math.random() * 20;
           }
 
-          if (index === 2) {
+          if (index === 3 || index === 4) {
             y = Math.random() * 20 + 3;
             z = Math.random() * 40 - 40;
           }
-          if (index === 3) {
+          if (index === 5) {
             y = Math.random() * 20;
             z = -20;
           }
@@ -195,7 +219,7 @@
         controlPoints.forEach((point, index) => {
           const folder = gui.addFolder(`Point ${index + 1}`);
           folder.add(point, "y", 0, 20).onChange(updateLathe);
-          if (index == 3) {
+          if (index == 4) {
             minz = -20;
             maxz = -20;
           }
