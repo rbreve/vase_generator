@@ -175,7 +175,7 @@
           });
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0x666666);
+        const ambientLight = new THREE.AmbientLight(0xffffff);
         scene.add(ambientLight);
         dirLight = new THREE.DirectionalLight(0xffffff, 3);
         dirLight.position.set(1, 12, 18);
@@ -189,7 +189,7 @@
         dirLight.shadow.mapSize.width = 512;
         dirLight.shadow.mapSize.height = 512;
         dirLight.shadow.bias = -0.0005;
-        dirLight.shadow.radius = 17;
+        dirLight.shadow.radius = 22;
 
         scene.add(dirLight);
       }
@@ -312,28 +312,28 @@
             vaseMaterial.clearcoat = clearcoat;
           });
 
-        const config = {
-          spotlightRadius: 17,
-          spotlightSamples: 8,
-          dirlightRadius: 4,
-          dirlightSamples: 8,
-        };
+        // const config = {
+        //   spotlightRadius: 17,
+        //   spotlightSamples: 8,
+        //   dirlightRadius: 4,
+        //   dirlightSamples: 8,
+        // };
 
-        folder
-          .add(config, "dirlightRadius")
-          .name("radius")
-          .min(0)
-          .max(45)
-          .onChange(function (value) {
-            dirLight.shadow.radius = value;
-          });
+        // folder
+        //   .add(config, "dirlightRadius")
+        //   .name("radius")
+        //   .min(0)
+        //   .max(45)
+        //   .onChange(function (value) {
+        //     dirLight.shadow.radius = value;
+        //   });
 
-        folder
-          .add(config, "dirlightSamples", 1, 45, 1)
-          .name("samples")
-          .onChange(function (value) {
-            dirLight.shadow.blurSamples = value;
-          });
+        // folder
+        //   .add(config, "dirlightSamples", 1, 45, 1)
+        //   .name("samples")
+        //   .onChange(function (value) {
+        //     dirLight.shadow.blurSamples = value;
+        //   });
 
         const materialColor = {
           color: `#${vaseMaterial.color.getHexString()}`, // Convert THREE.Color to hex string for dat.GUI
