@@ -27,6 +27,7 @@
       let normal;
       let color = 0x1b4696;
       let latheSides = 30;
+      let dirLight;
       const controlPoints = [
         new THREE.Vector3(-10, 2, 25),
         new THREE.Vector3(-10, 2, 15),
@@ -63,6 +64,9 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.5;
         controls.screenSpacePanning = false;
+        //limit control angle to 50 degrees
+        controls.maxPolarAngle = Math.PI / 2 - 0.1;
+        controls.minPolarAngle = Math.PI / 9;
 
         curve = new THREE.CatmullRomCurve3(controlPoints);
         const points2D = curve
@@ -76,59 +80,60 @@
         latheMesh = new THREE.Mesh();
         latheMesh.castShadow = true;
 
-        // Add ap plane
-        const planeGeometry = new THREE.PlaneGeometry(100, 100);
-        // load texture from materials/woodfloor (normal and displacement map are also available in the folder)
+        //Add BG Sphere
+        // Load the texture
+
+        const textureLoader = new THREE.TextureLoader();
+        const bgTexture = textureLoader.load(
+          "./textures/room3.jpg",
+          function (texture) {
+            texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.offset.set(0, 0);
+            texture.repeat.set(1, 1);
+          }
+        );
+
+        const bgPlaneGeometry = new THREE.SphereGeometry(800, 60, 40);
+        const bgPlaneMaterial = new THREE.MeshBasicMaterial({
+          map: bgTexture,
+          side: THREE.DoubleSide,
+        });
+
+        const bgPlane = new THREE.Mesh(bgPlaneGeometry, bgPlaneMaterial);
+        bgPlane.position.set(0, 0, 0);
+
+        scene.add(bgPlane);
+
+        //Circle for table
+
+        const planeGeometry = new THREE.CircleGeometry(100, 100);
         let dif = new THREE.TextureLoader().load(
           "./materials/woodfloor/wood_floor_worn_diff_2k.jpg"
         );
         let normal = new THREE.TextureLoader().load(
-          "./materials/woodfloor/wood_floor_worn_nor_gl_2k.jpg"
+          "./normalmaps/wood2normals.png"
         );
-        
-        let disp = new THREE.TextureLoader().load(
-          "./materials/woodfloor/wood_floor_worn_disp_2k.png"
-        );
-        dif.repeat.set(2, 2);
-        normal.repeat.set(2, 2);
-        disp.repeat.set(2, 2);
 
-        // Wooden Plane
-        // const planeMaterial = new THREE.MeshStandardMaterial({
-        //   color: 0xffffff,
-        //   side: THREE.DoubleSide,
-        //   metalness: 0,
-        //   flatShading: 0,
-        //     map: dif,
-        //     normalMap: normal,
-        //     displacementMap: disp,
-        // });
-        // const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        // plane.rotation.x = Math.PI / 2;
-        // plane.position.y = -19;
-        // scene.add(plane);
+        let disp = new THREE.TextureLoader().load("./materials/wood2.png");
 
-        // Pink Plane
-        const plane = new THREE.Mesh(
-					new THREE.PlaneGeometry(),
-					new THREE.ShadowMaterial( {
-						color: 0x000,
-						transparent: true,
-						opacity: 0.075,
-						side: THREE.DoubleSide,
-					} ),
-				);
-				plane.position.y = -20;
-				plane.rotation.x = Math.PI / 2;
-				plane.scale.setScalar( 200 );
-				plane.receiveShadow = true;
-				scene.add( plane );
+        const planeMaterial = new THREE.MeshStandardMaterial({
+          map: disp,
+          normalMap: normal,
+          side: THREE.DoubleSide,
+          roughness: 0.1,
+          metalness: 0.1,
+          clearcoat: 0.3,
+        });
 
-
-        scene.background = new THREE.Color(0xffffff);
+         
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+        plane.rotation.x = -Math.PI / 2; // Rotate to make it horizontal
+        plane.position.y = -20;
+        scene.add(plane);
 
         // load normal map texture from normalmaps/ folder normal.jpg
-        normal = new THREE.TextureLoader().load("./normalmaps/MetalCastRustedNormal.png");
+        normal = new THREE.TextureLoader().load("./normalmaps/concrete.jpg"); //"./normalmaps/MetalCastRustedNormal.png"
         normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
         normal.repeat.set(3, 2);
 
@@ -139,7 +144,9 @@
               envmaploader.fromEquirectangular(hdrEquirect);
             scene.environment = hdrEquirectResult.texture;
 
-            let texture = new THREE.TextureLoader().load("./materials/MetalCastRusted.jpg");
+            let texture = new THREE.TextureLoader().load(
+              "./materials/concrete.jpg"
+            ); //./materials/MetalCastRusted.jpg"
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(3, 2);
 
@@ -168,42 +175,48 @@
           });
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff);
+        const ambientLight = new THREE.AmbientLight(0x666666);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight = new THREE.DirectionalLight(0xffffff, 3);
+        dirLight.position.set(1, 12, 18);
         dirLight.castShadow = true;
-        dirLight.position.set(-1, 1, 1);
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.near = 0.1;
+        dirLight.shadow.camera.far = 500;
         dirLight.shadow.camera.right = 17;
         dirLight.shadow.camera.left = -17;
         dirLight.shadow.camera.top = 17;
         dirLight.shadow.camera.bottom = -17;
         dirLight.shadow.mapSize.width = 512;
         dirLight.shadow.mapSize.height = 512;
-        dirLight.shadow.radius = 25;
-        dirLight.shadow.bias = -0.01;
+        dirLight.shadow.bias = -0.0005;
+        dirLight.shadow.radius = 17;
+
         scene.add(dirLight);
       }
 
       function randomObject() {
-        // add index to the forEach callback to get the index of the point
+        // Generate random vase
         controlPoints.forEach((point, index) => {
           let y = 0,
             z = 0;
-          if (index === 0 || index === 1 || index=== 2) {
-            y = Math.random() * 20 + 3;
-            z = Math.random() * 20;
+          if (index === 0 || index === 1 || index === 2) {
+ 
+            y = Math.random() * 13 + 2;
+            z = Math.random() * 10;
+            z = Math.random() * 12 + 8;
+
           }
 
-          if (index === 3 || index === 4) {
-            y = Math.random() * 20 + 3;
-            z = Math.random() * 40 - 40;
+          if (index === 3) {
+            y = Math.random() * 10 + 5;
+            z = Math.random() * 10 - 10;
+
           }
-          if (index === 5) {
-            y = Math.random() * 20;
+          if (index === 4) {
+            y = Math.random() * 15 + 5;
             z = -20;
           }
+      
           point.y = y;
           point.z = z;
         });
@@ -211,19 +224,55 @@
         updateLathe();
       }
 
+      function loadConfigNames() {
+        return Object.keys(localStorage).filter((key) =>
+          key.startsWith("config-")
+        );
+      }
+
+      // Restore the saved Vase from localStorage
+      function restoreConfig(configName) {
+        const config = JSON.parse(localStorage.getItem(configName));
+        if (!config) return;
+
+        // Restore the configuration
+        controlPoints.forEach((point, index) => {
+          point.y = config.controlPoints[index].y;
+          point.z = config.controlPoints[index].z;
+        });
+
+        angularity = config.angularity;
+        latheSides = config.latheSides;
+        //metalness = config.metalness;
+        roughness = config.roughness;
+        clearcoat = config.clearcoat;
+        vaseMaterial.color.set(`#${config.color}`);
+
+        // Call update functions if necessary
+        updateLathe();
+      }
       function setupGUI() {
         // GUI
         const gui = new dat.GUI();
         let minz = -40;
         let maxz = 20;
+        gui.add({ generate: randomObject }, "generate").name("Create Random Vase");
+
         controlPoints.forEach((point, index) => {
           const folder = gui.addFolder(`Point ${index + 1}`);
-          folder.add(point, "y", 0, 20).onChange(updateLathe);
+          folder.add(point, "y", 0, 20).name("Width").onChange(updateLathe);
+          if (index === 3){
+            minz = -8;
+            maxz = 4;
+          }
           if (index == 4) {
             minz = -20;
             maxz = -20;
           }
-          folder.add(point, "z", minz, maxz).onChange(updateLathe);
+          folder
+            .add(point, "z", minz, maxz)
+            .name("Y position")
+            .onChange(updateLathe);
           folder.open();
         });
         const folder = gui.addFolder(`Angularity`);
@@ -263,9 +312,64 @@
             vaseMaterial.clearcoat = clearcoat;
           });
 
+        const config = {
+          spotlightRadius: 17,
+          spotlightSamples: 8,
+          dirlightRadius: 4,
+          dirlightSamples: 8,
+        };
+
+        folder
+          .add(config, "dirlightRadius")
+          .name("radius")
+          .min(0)
+          .max(45)
+          .onChange(function (value) {
+            dirLight.shadow.radius = value;
+          });
+
+        folder
+          .add(config, "dirlightSamples", 1, 45, 1)
+          .name("samples")
+          .onChange(function (value) {
+            dirLight.shadow.blurSamples = value;
+          });
+
         const materialColor = {
           color: `#${vaseMaterial.color.getHexString()}`, // Convert THREE.Color to hex string for dat.GUI
         };
+
+        gui.add({ saveConfig }, "saveConfig").name("Save");
+
+        function saveConfig() {
+          const config = {
+            controlPoints: controlPoints.map((point) => ({
+              y: point.y,
+              z: point.z,
+            })),
+            angularity,
+            latheSides,
+            roughness,
+            clearcoat,
+            color: vaseMaterial.color.getHexString(),
+          };
+
+          const configName = "config-" + Date.now();
+          localStorage.setItem(configName, JSON.stringify(config));
+          updateConfigDropdown(configName);
+        }
+
+        function updateConfigDropdown(newConfigName) {
+          const configController = gui.__controllers.find(
+            (controller) => controller.property === "config"
+          );
+          if (configController) {
+            configController.__select.options[newConfigName] = newConfigName;
+            configController.updateDisplay();
+          }
+        }
+
+
 
         folder
           .addColor(materialColor, "color")
@@ -274,7 +378,13 @@
             vaseMaterial.color.set(hexColor); // Update material color
           });
 
-        gui.add({ generate: randomObject }, "generate").name("Generate");
+
+        // Add Restore functionality
+        const configs = loadConfigNames();
+        const configController = gui
+          .add({ config: "default" }, "config", configs)
+          .name("Restore");
+        configController.onChange(restoreConfig);
 
         folder.open();
       }
@@ -304,7 +414,7 @@
 
       function animate() {
         requestAnimationFrame(animate);
-        //latheMesh.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
+        camera.rotation.y += 0.01; // Add some rotation to the lathe object to view it from different angles
         controls.update();
 
         renderer.render(scene, camera);
